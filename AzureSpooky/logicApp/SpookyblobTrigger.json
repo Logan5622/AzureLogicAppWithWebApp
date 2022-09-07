@@ -1,0 +1,355 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Condition_of_Files_of_Image": {
+                "actions": {
+                    "Copy_blob_to_Images": {
+                        "inputs": {
+                            "headers": {
+                                "ReadFileMetadataFromServer": true
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                            "queries": {
+                                "destination": "logicappfiles-processed/images/",
+                                "overwrite": false,
+                                "queryParametersSingleEncoded": true,
+                                "source": "@triggerBody()?['Path']"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    }
+                },
+                "else": {
+                    "actions": {
+                        "Copy_blob_to_nonimages": {
+                            "inputs": {
+                                "headers": {
+                                    "ReadFileMetadataFromServer": true
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                                "queries": {
+                                    "destination": "logicappfiles-processed/nonimages/",
+                                    "overwrite": false,
+                                    "queryParametersSingleEncoded": true,
+                                    "source": "@triggerBody()?['Path']"
+                                }
+                            },
+                            "runAfter": {},
+                            "type": "ApiConnection"
+                        },
+                        "Delete_blob_(V2)": {
+                            "inputs": {
+                                "headers": {
+                                    "SkipDeleteIfFileNotFoundOnServer": false
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                    }
+                                },
+                                "method": "delete",
+                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(body('Copy_blob_to_nonimages')?['Path']))}"
+                            },
+                            "runAfter": {
+                                "Switch": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection"
+                        },
+                        "Switch": {
+                            "cases": {
+                                "Case": {
+                                    "actions": {
+                                        "Copy_blob_(V2)": {
+                                            "inputs": {
+                                                "headers": {
+                                                    "ReadFileMetadataFromServer": true
+                                                },
+                                                "host": {
+                                                    "connection": {
+                                                        "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                                    }
+                                                },
+                                                "method": "post",
+                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                                                "queries": {
+                                                    "destination": "logicappfiles-processed/nonimages/pdf/",
+                                                    "overwrite": true,
+                                                    "queryParametersSingleEncoded": true,
+                                                    "source": "@body('Copy_blob_to_nonimages')?['Path']"
+                                                }
+                                            },
+                                            "runAfter": {},
+                                            "type": "ApiConnection"
+                                        }
+                                    },
+                                    "case": "application/pdf"
+                                },
+                                "Case_2": {
+                                    "actions": {
+                                        "Copy_blob_(V2)_2": {
+                                            "inputs": {
+                                                "headers": {
+                                                    "ReadFileMetadataFromServer": true
+                                                },
+                                                "host": {
+                                                    "connection": {
+                                                        "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                                    }
+                                                },
+                                                "method": "post",
+                                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                                                "queries": {
+                                                    "destination": "logicappfiles-processed/nonimages/zip/",
+                                                    "overwrite": true,
+                                                    "queryParametersSingleEncoded": true,
+                                                    "source": "@body('Copy_blob_to_nonimages')?['Path']"
+                                                }
+                                            },
+                                            "runAfter": {},
+                                            "type": "ApiConnection"
+                                        }
+                                    },
+                                    "case": "application/x-zip-compressed"
+                                }
+                            },
+                            "default": {
+                                "actions": {
+                                    "Copy_blob_(V2)_3": {
+                                        "inputs": {
+                                            "headers": {
+                                                "ReadFileMetadataFromServer": true
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                                            "queries": {
+                                                "destination": "logicappfiles-processed/nonimages/others/",
+                                                "overwrite": true,
+                                                "queryParametersSingleEncoded": true,
+                                                "source": "@body('Copy_blob_to_nonimages')?['Path']"
+                                            }
+                                        },
+                                        "runAfter": {},
+                                        "type": "ApiConnection"
+                                    }
+                                }
+                            },
+                            "expression": "@body('Copy_blob_to_nonimages')?['MediaType']",
+                            "runAfter": {
+                                "Copy_blob_to_nonimages": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Switch"
+                        }
+                    }
+                },
+                "expression": {
+                    "or": [
+                        {
+                            "endsWith": [
+                                "@triggerBody()?['Name']",
+                                ".png"
+                            ]
+                        },
+                        {
+                            "endsWith": [
+                                "@triggerBody()?['Name']",
+                                ".jpg"
+                            ]
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Copy_blob_to_Processed": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "If"
+            },
+            "Copy_blob_to_Processed": {
+                "inputs": {
+                    "headers": {
+                        "ReadFileMetadataFromServer": true
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/copyFile",
+                    "queries": {
+                        "destination": "logicappfiles-processed",
+                        "overwrite": false,
+                        "queryParametersSingleEncoded": true,
+                        "source": "@triggerBody()?['Path']"
+                    }
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Create_file_to_Drop_box": {
+                "inputs": {
+                    "body": "@body('Get_blob_content_extract')",
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['dropbox']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/datasets/default/files",
+                    "queries": {
+                        "folderPath": "/logicapp",
+                        "name": "@triggerBody()?['Name']",
+                        "queryParametersSingleEncoded": true
+                    }
+                },
+                "runAfter": {
+                    "Get_blob_content_extract": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "Delete_blob_on_processed_folder": {
+                "inputs": {
+                    "headers": {
+                        "SkipDeleteIfFileNotFoundOnServer": false
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "delete",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(body('Copy_blob_to_Processed')?['Path']))}"
+                },
+                "runAfter": {
+                    "Condition_of_Files_of_Image": [
+                        "Succeeded"
+                    ],
+                    "Create_file_to_Drop_box": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "Delete_blob_on_root_folder": {
+                "inputs": {
+                    "headers": {
+                        "SkipDeleteIfFileNotFoundOnServer": false
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "delete",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Path']))}"
+                },
+                "runAfter": {
+                    "Delete_blob_on_processed_folder": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "Get_blob_content_extract": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/files/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Path']))}/content",
+                    "queries": {
+                        "inferContentType": true
+                    }
+                },
+                "runAfter": {
+                    "Copy_blob_to_Processed": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "When_a_blob_is_added_or_modified_(properties_only)_(V2)_2": {
+                "evaluatedRecurrence": {
+                    "frequency": "Month",
+                    "interval": 3
+                },
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/triggers/batch/onupdatedfile",
+                    "queries": {
+                        "checkBothCreatedAndModifiedDateTime": false,
+                        "folderId": "JTJmbG9naWNhcHBmaWxlcw==",
+                        "maxFileCount": 10
+                    }
+                },
+                "metadata": {
+                    "JTJmbG9naWNhcHBmaWxlcw==": "/logicappfiles"
+                },
+                "recurrence": {
+                    "frequency": "Month",
+                    "interval": 3
+                },
+                "splitOn": "@triggerBody()",
+                "type": "ApiConnection"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azureblob": {
+                    "connectionId": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/resourceGroups/AzureSpooky_group/providers/Microsoft.Web/connections/azureblob",
+                    "connectionName": "azureblob",
+                    "id": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/providers/Microsoft.Web/locations/southindia/managedApis/azureblob"
+                },
+                "dropbox": {
+                    "connectionId": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/resourceGroups/AzureSpooky_group/providers/Microsoft.Web/connections/dropbox",
+                    "connectionName": "dropbox",
+                    "id": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/providers/Microsoft.Web/locations/southindia/managedApis/dropbox"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,123 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "For_each": {
+                "actions": {
+                    "Increment_variable": {
+                        "inputs": {
+                            "name": "ImageCounter",
+                            "value": 1
+                        },
+                        "runAfter": {},
+                        "type": "IncrementVariable"
+                    }
+                },
+                "foreach": "@body('Lists_blobs_(V2)')?['value']",
+                "runAfter": {
+                    "Initialize_variable": [
+                        "Succeeded"
+                    ]
+                },
+                "runtimeConfiguration": {
+                    "concurrency": {
+                        "repetitions": 1
+                    }
+                },
+                "type": "Foreach"
+            },
+            "Initialize_variable": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ImageCounter",
+                            "type": "integer",
+                            "value": 0
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Lists_blobs_(V2)": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Lists_blobs_(V2)": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/foldersV2/@{encodeURIComponent(encodeURIComponent('JTJmbG9naWNhcHBmaWxlcy1wcm9jZXNzZWQlMmZpbWFnZXMlMmY='))}",
+                    "queries": {
+                        "nextPageMarker": "",
+                        "useFlatListing": false
+                    }
+                },
+                "metadata": {
+                    "JTJmbG9naWNhcHBmaWxlcy1wcm9jZXNzZWQlMmZpbWFnZXMlMmY=": "/logicappfiles-processed/images/"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Until": {
+                "actions": {
+                    "Increment_variable_2": {
+                        "inputs": {
+                            "name": "ImageCounter",
+                            "value": 3
+                        },
+                        "runAfter": {},
+                        "type": "IncrementVariable"
+                    }
+                },
+                "expression": "@greater(variables('ImageCounter'), 10)",
+                "limit": {
+                    "count": 60,
+                    "timeout": "PT1H"
+                },
+                "runAfter": {
+                    "For_each": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Until"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "Recurrence": {
+                "evaluatedRecurrence": {
+                    "frequency": "Minute",
+                    "interval": 3
+                },
+                "recurrence": {
+                    "frequency": "Minute",
+                    "interval": 3
+                },
+                "type": "Recurrence"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azureblob": {
+                    "connectionId": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/resourceGroups/ReccurencLogicapp_group/providers/Microsoft.Web/connections/azureblob",
+                    "connectionName": "azureblob",
+                    "id": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/providers/Microsoft.Web/locations/southindia/managedApis/azureblob"
+                }
+            }
+        }
+    }
+}

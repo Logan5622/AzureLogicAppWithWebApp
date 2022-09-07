@@ -1,0 +1,97 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Insert_row_(V2)": {
+                "inputs": {
+                    "body": {
+                        "Email": "@triggerBody()?['Email']",
+                        "Id": "@triggerBody()?['Id']",
+                        "Name": "@triggerBody()?['Name']",
+                        "Phone": "@triggerBody()?['Phone']"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['sql']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default'))},@{encodeURIComponent(encodeURIComponent('default'))}/tables/@{encodeURIComponent(encodeURIComponent('[dbo].[SpookyRequests]'))}/items"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Send_email_(V2)": {
+                "inputs": {
+                    "body": {
+                        "Body": "<p>Hello,<br>\n<br>\nFrom Spooky Azure Logic App<br>\n<br>\nSucessEvent<br>\n<br>\nName - @{triggerBody()?['Name']}<br>\nEmail - @{triggerBody()?['Email']}<br>\nPhone - @{triggerBody()?['Phone']}</p>",
+                        "To": "logaraj76652@gmail.com"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['gmail']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/Mail"
+                },
+                "runAfter": {
+                    "Insert_row_(V2)": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "method": "POST",
+                    "schema": {
+                        "properties": {
+                            "Email": {
+                                "type": "string"
+                            },
+                            "Id": {
+                                "type": "string"
+                            },
+                            "Name": {
+                                "type": "string"
+                            },
+                            "Phone": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "gmail": {
+                    "connectionId": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/resourceGroups/AzureSpooky_group/providers/Microsoft.Web/connections/gmail-1",
+                    "connectionName": "gmail-1",
+                    "id": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/providers/Microsoft.Web/locations/southindia/managedApis/gmail"
+                },
+                "sql": {
+                    "connectionId": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/resourceGroups/AzureSpooky_group/providers/Microsoft.Web/connections/sql",
+                    "connectionName": "sql",
+                    "id": "/subscriptions/7b1b2a4f-1bc7-43f4-821e-3a51037766c5/providers/Microsoft.Web/locations/southindia/managedApis/sql"
+                }
+            }
+        }
+    }
+}
